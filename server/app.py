@@ -1,4 +1,5 @@
 # app.py
+from fastapi.responses import RedirectResponse
 from openenv.core.env_server import create_app
 from models import ContentGuardAction, ContentGuardObservation
 from .environment import ContentGuardEnvironment
@@ -10,6 +11,11 @@ app = create_app(
     env_name="contentguard",
     max_concurrent_envs=64,
 )
+
+
+@app.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")
