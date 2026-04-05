@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Type checking / linting caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Environment variables — never commit these
+.env
+.env.*
+!.env.example
+
+# Generated runtime data (re-created on first reset())
+data/rationales/
+
+# Dev scratch / context notes — not part of submission
+context.md
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings — not part of submission
+.claude/
+
+# uv lockfile — Dockerfile uses pip, not uv
+uv.lock

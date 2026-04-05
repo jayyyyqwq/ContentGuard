@@ -1,0 +1,7 @@
+#openenv.yaml
+spec_version: 1
+name: contentguard
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
