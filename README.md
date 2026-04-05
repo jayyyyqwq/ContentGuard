@@ -1,3 +1,15 @@
+---
+title: ContentGuard
+emoji: ⚖️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+tags:
+  - openenv
+pinned: false
+---
+
 # ContentGuard
 
 > An RL environment for content rights adjudication. Agents start with almost no information, choose which evidence channels to investigate, and issue defensible platform policy decisions the way a real Trust & Safety reviewer would.
