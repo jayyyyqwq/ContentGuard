@@ -6,6 +6,9 @@ from models import ContentGuardAction, ContentGuardObservation, ContentGuardStat
 from .case_generator import generate_case
 from .tasks import DIFFICULTY_ARCHETYPE_MAP
 from .grader import terminal_reward, step_reward
+from .skills import SkillRouter
+from .skills.synthetic import SyntheticSkill
+from .skills.audio import AudioSkill
 
 ACTION_UNLOCKS = {
     "query_rights_db":    ["rights_holder_count", "license_status",
@@ -16,6 +19,12 @@ ACTION_UNLOCKS = {
     "check_usage_context": ["commercial_channel", "sub_license_depth"],
     "cross_ref_history":  ["prior_disputes_same_uploader"],
 }
+
+_router = SkillRouter()
+_router.register("video", SyntheticSkill())
+_router.register("audio", AudioSkill())
+_router.set_fallback(SyntheticSkill())
+
 
 class ContentGuardEnvironment(Environment):
 
@@ -83,11 +92,12 @@ class ContentGuardEnvironment(Environment):
             self._obs.reward = reward
             return self._obs
 
-        # Investigation action: unlock fields
+        # Investigation action: unlock fields via skill router
         fields_to_reveal = ACTION_UNLOCKS.get(action.operation, [])
+        resolved = _router.resolve(action.operation, self._case, fields_to_reveal)
         for field in fields_to_reveal:
-            if field in self._case:
-                setattr(self._obs, field, self._case[field])
+            if field in resolved:
+                setattr(self._obs, field, resolved[field])
 
         self._obs.reward = step_reward(action.operation, self._case, self._state)
         self._obs.done = False
@@ -111,3 +121,5 @@ class ContentGuardEnvironment(Environment):
 
     def close(self) -> None:
         pass
+
+

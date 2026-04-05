@@ -1,0 +1,43 @@
+{
+  "assess_transformation": {
+    "transformation_index": 0.08,
+    "commentary_present": 0,
+    "overlap_duration_pct": 0.48,
+    "audio_metadata": {
+      "tempo_bpm": 110.0,
+      "duration_s": 20.0,
+      "spectral_centroid_hz": 2980.7,
+      "speech_ratio": 0.22,
+      "description": "Product advertisement \u2014 licensed track used beyond scope of license agreement"
+    }
+  },
+  "check_fingerprint": {
+    "fingerprint_match": 1,
+    "composition_similarity_score": 0.88,
+    "audio_metadata": {
+      "mfcc_signature": [
+        -172.5,
+        88.6,
+        -14.1,
+        31.2,
+        -9.8
+      ],
+      "chroma_profile": [
+        0.41,
+        0.19,
+        0.75,
+        0.21,
+        0.78,
+        0.38,
+        0.55,
+        0.31,
+        0.62,
+        0.27,
+        0.68,
+        0.24
+      ],
+      "fingerprint_method": "chromaprint",
+      "note": "Exact match \u2014 track identified in commercial context exceeding license terms"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "assess_transformation": {
+    "transformation_index": 0.12,
+    "commentary_present": 0,
+    "overlap_duration_pct": 0.55,
+    "audio_metadata": {
+      "tempo_bpm": 128.0,
+      "duration_s": 25.0,
+      "spectral_centroid_hz": 3450.2,
+      "speech_ratio": 0.15,
+      "description": "Background music bed under commercial voiceover \u2014 minimal transformation"
+    }
+  },
+  "check_fingerprint": {
+    "fingerprint_match": 1,
+    "composition_similarity_score": 0.91,
+    "audio_metadata": {
+      "mfcc_signature": [
+        -180.2,
+        92.1,
+        -8.4,
+        28.7,
+        -11.3
+      ],
+      "chroma_profile": [
+        0.38,
+        0.25,
+        0.82,
+        0.15,
+        0.73,
+        0.42,
+        0.61,
+        0.28,
+        0.55,
+        0.32,
+        0.71,
+        0.19
+      ],
+      "fingerprint_method": "chromaprint",
+      "note": "Direct fingerprint match \u2014 original track used as background music"
+    }
+  }
+}

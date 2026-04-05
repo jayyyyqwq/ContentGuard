@@ -1,0 +1,43 @@
+{
+  "assess_transformation": {
+    "transformation_index": 0.18,
+    "commentary_present": 0,
+    "overlap_duration_pct": 0.85,
+    "audio_metadata": {
+      "tempo_bpm": 96.0,
+      "duration_s": 18.0,
+      "spectral_centroid_hz": 3120.3,
+      "speech_ratio": 0.0,
+      "description": "AI chord progression \u2014 retimed but harmonically derivative"
+    }
+  },
+  "check_fingerprint": {
+    "fingerprint_match": 0,
+    "composition_similarity_score": 0.79,
+    "audio_metadata": {
+      "mfcc_signature": [
+        -195.8,
+        78.4,
+        -18.2,
+        42.1,
+        -5.9
+      ],
+      "chroma_profile": [
+        0.52,
+        0.18,
+        0.71,
+        0.29,
+        0.76,
+        0.31,
+        0.48,
+        0.22,
+        0.69,
+        0.35,
+        0.58,
+        0.44
+      ],
+      "fingerprint_method": "chromaprint",
+      "note": "Synthetic generation evades waveform matching; composition analysis reveals high similarity"
+    }
+  }
+}

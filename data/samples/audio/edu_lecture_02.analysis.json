@@ -1,0 +1,43 @@
+{
+  "assess_transformation": {
+    "transformation_index": 0.58,
+    "commentary_present": 1,
+    "overlap_duration_pct": 0.3,
+    "audio_metadata": {
+      "tempo_bpm": 0.0,
+      "duration_s": 22.0,
+      "spectral_centroid_hz": 1890.2,
+      "speech_ratio": 0.7,
+      "description": "Music theory lesson \u2014 brief copyrighted excerpt with detailed harmonic analysis overlay"
+    }
+  },
+  "check_fingerprint": {
+    "fingerprint_match": 1,
+    "composition_similarity_score": 0.52,
+    "audio_metadata": {
+      "mfcc_signature": [
+        -142.7,
+        51.8,
+        -21.3,
+        19.1,
+        -16.7
+      ],
+      "chroma_profile": [
+        0.29,
+        0.42,
+        0.38,
+        0.45,
+        0.28,
+        0.52,
+        0.33,
+        0.49,
+        0.32,
+        0.48,
+        0.35,
+        0.43
+      ],
+      "fingerprint_method": "chromaprint",
+      "note": "Educational \u2014 brief excerpt with analytical commentary throughout"
+    }
+  }
+}

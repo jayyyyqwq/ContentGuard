@@ -1,0 +1,54 @@
+{
+  "version": "1.0",
+  "description": "Audio clip manifest for ContentGuard audio skill. Each clip maps to a case archetype with pre-computed librosa analysis.",
+  "clips": [
+    {
+      "clip_id": "ai_synth_melody_01",
+      "archetype": "ai_audio_reconstruction",
+      "description": "AI-reconstructed melody — evades fingerprint matching but composition similarity is high",
+      "duration_s": 22
+    },
+    {
+      "clip_id": "ai_synth_melody_02",
+      "archetype": "ai_audio_reconstruction",
+      "description": "AI-generated chord progression mimicking original composition",
+      "duration_s": 18
+    },
+    {
+      "clip_id": "bg_music_commercial_01",
+      "archetype": "background_music_commercial",
+      "description": "Commercial video with copyrighted background music — low transformation",
+      "duration_s": 25
+    },
+    {
+      "clip_id": "bg_music_commercial_02",
+      "archetype": "background_music_commercial",
+      "description": "Product ad with licensed track used beyond license scope",
+      "duration_s": 20
+    },
+    {
+      "clip_id": "commentary_speech_01",
+      "archetype": "commentary_clip_noncommercial",
+      "description": "Podcast commentary over brief copyrighted audio clip — high transformation",
+      "duration_s": 28
+    },
+    {
+      "clip_id": "commentary_speech_02",
+      "archetype": "commentary_clip_noncommercial",
+      "description": "Music review with critical analysis over short excerpt",
+      "duration_s": 24
+    },
+    {
+      "clip_id": "edu_lecture_01",
+      "archetype": "educational_excerpt",
+      "description": "University lecture referencing copyrighted audio example — educational purpose",
+      "duration_s": 30
+    },
+    {
+      "clip_id": "edu_lecture_02",
+      "archetype": "educational_excerpt",
+      "description": "Music theory lesson using brief copyrighted excerpt as illustration",
+      "duration_s": 22
+    }
+  ]
+}

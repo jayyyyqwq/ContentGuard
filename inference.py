@@ -22,6 +22,7 @@ Usage:
 import os
 import sys
 import json
+import time
 import statistics
 
 from openai import OpenAI

@@ -1,0 +1,43 @@
+{
+  "assess_transformation": {
+    "transformation_index": 0.22,
+    "commentary_present": 0,
+    "overlap_duration_pct": 0.78,
+    "audio_metadata": {
+      "tempo_bpm": 120.0,
+      "duration_s": 22.0,
+      "spectral_centroid_hz": 2840.5,
+      "speech_ratio": 0.0,
+      "description": "Instrumental \u2014 AI-reconstructed melody with no vocal content"
+    }
+  },
+  "check_fingerprint": {
+    "fingerprint_match": 0,
+    "composition_similarity_score": 0.82,
+    "audio_metadata": {
+      "mfcc_signature": [
+        -210.4,
+        85.2,
+        -12.6,
+        35.8,
+        -8.1
+      ],
+      "chroma_profile": [
+        0.45,
+        0.12,
+        0.68,
+        0.23,
+        0.81,
+        0.34,
+        0.56,
+        0.19,
+        0.72,
+        0.28,
+        0.63,
+        0.41
+      ],
+      "fingerprint_method": "chromaprint",
+      "note": "Fingerprint miss \u2014 AI-generated audio evades exact match but harmonic structure is nearly identical"
+    }
+  }
+}

@@ -1,7 +1,40 @@
 #case_generator.py
+import json
 import random
 import os
 import uuid
+from pathlib import Path
+
+AUDIO_ARCHETYPES = {
+    "ai_audio_reconstruction",
+    "background_music_commercial",
+    "commentary_clip_noncommercial",
+    "educational_excerpt",
+}
+
+_MANIFEST_PATH = Path(__file__).resolve().parent.parent / "data" / "samples" / "audio" / "manifest.json"
+_MANIFEST_CACHE: dict | None = None
+
+
+def _load_audio_manifest() -> dict:
+    global _MANIFEST_CACHE
+    if _MANIFEST_CACHE is None:
+        if _MANIFEST_PATH.exists():
+            with open(_MANIFEST_PATH) as f:
+                _MANIFEST_CACHE = json.load(f)
+        else:
+            _MANIFEST_CACHE = {"clips": []}
+    return _MANIFEST_CACHE
+
+
+def _assign_audio_clip(archetype_name: str, rng: random.Random) -> str | None:
+    """Deterministically pick an audio clip for an audio archetype."""
+    manifest = _load_audio_manifest()
+    candidates = [c for c in manifest["clips"] if c["archetype"] == archetype_name]
+    if not candidates:
+        return None
+    return rng.choice(candidates)["clip_id"]
+
 
 ARCHETYPES = {
     "verbatim_commercial": {
@@ -213,7 +246,8 @@ def generate_case(archetype_name: str, seed: int | None = None) -> dict:
     archetype = ARCHETYPES[archetype_name]
 
     for attempt in range(200):
-        case = {"archetype": archetype_name, "case_id": str(uuid.UUID(int=rng.getrandbits(128))), "uploader_id": f"uploader_{rng.randint(1000, 9999)}", "claimant_id": f"claimant_{rng.randint(1000, 9999)}", "content_duration_s": rng.randint(30, 3600), "content_type": "video"}
+        content_type = "audio" if archetype_name in AUDIO_ARCHETYPES else "video"
+        case = {"archetype": archetype_name, "case_id": str(uuid.UUID(int=rng.getrandbits(128))), "uploader_id": f"uploader_{rng.randint(1000, 9999)}", "claimant_id": f"claimant_{rng.randint(1000, 9999)}", "content_duration_s": rng.randint(30, 3600), "content_type": content_type}
 
         for field, spec in archetype.items():
             if field in ("ground_truth_range", "correct_verdict"):
@@ -230,6 +264,13 @@ def generate_case(archetype_name: str, seed: int | None = None) -> dict:
             gt_lo, gt_hi = archetype["ground_truth_range"]
             case["ground_truth"] = round(rng.uniform(gt_lo, gt_hi), 3)
             case["correct_verdict"] = archetype["correct_verdict"]
+
+            # Assign audio clip for audio archetypes (deterministic via seeded rng)
+            if case["content_type"] == "audio":
+                clip_id = _assign_audio_clip(archetype_name, rng)
+                if clip_id:
+                    case["audio_clip_id"] = clip_id
+
             case["rationale"] = build_rationale(case, archetype_name)
             return case
 

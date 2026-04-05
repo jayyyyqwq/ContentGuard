@@ -1,0 +1,43 @@
+{
+  "assess_transformation": {
+    "transformation_index": 0.82,
+    "commentary_present": 1,
+    "overlap_duration_pct": 0.15,
+    "audio_metadata": {
+      "tempo_bpm": 0.0,
+      "duration_s": 28.0,
+      "spectral_centroid_hz": 1850.4,
+      "speech_ratio": 0.85,
+      "description": "Podcast commentary \u2014 85% original speech, 15% copyrighted audio excerpt for critique"
+    }
+  },
+  "check_fingerprint": {
+    "fingerprint_match": 1,
+    "composition_similarity_score": 0.35,
+    "audio_metadata": {
+      "mfcc_signature": [
+        -145.8,
+        62.3,
+        -22.4,
+        18.9,
+        -15.6
+      ],
+      "chroma_profile": [
+        0.28,
+        0.45,
+        0.31,
+        0.52,
+        0.22,
+        0.61,
+        0.35,
+        0.48,
+        0.29,
+        0.55,
+        0.33,
+        0.42
+      ],
+      "fingerprint_method": "chromaprint",
+      "note": "Partial match on brief excerpt \u2014 overwhelmingly original speech content"
+    }
+  }
+}
