@@ -3,9 +3,9 @@
 ContentGuard baseline inference script.
 
 MANDATORY environment variables:
-  API_BASE_URL  — LLM API endpoint  (e.g. https://router.huggingface.co/v1)
-  MODEL_NAME    — Model identifier  (e.g. meta-llama/Llama-3.3-70B-Instruct)
-  HF_TOKEN      — Hugging Face / API key
+  API_BASE_URL  — LLM API endpoint  (e.g. https://api.groq.com/openai/v1)
+  MODEL_NAME    — Model identifier  (e.g. llama-3.3-70b-versatile)
+  HF_TOKEN      — API key (Groq, HuggingFace, or OpenAI-compatible)
 
 Optional env vars:
   ENV_BASE_URL  — ContentGuard env server (default: http://localhost:8000)
@@ -20,6 +20,7 @@ Usage:
 """
 
 import os
+import sys
 import json
 import statistics
 
@@ -29,13 +30,18 @@ from openenv.core import GenericEnvClient
 # ── Mandatory competition variables ───────────────────────────────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.3-70B-Instruct")
-HF_TOKEN     = os.getenv("HF_TOKEN")   # no default — must be set in environment
+HF_TOKEN     = os.getenv("HF_TOKEN")
+
+if not HF_TOKEN:
+    print("[ERROR] HF_TOKEN environment variable is required. Set it to your API key.", flush=True)
+    sys.exit(1)
 
 ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:8000")
 
 BENCHMARK        = "contentguard"
 EPISODES_PER_TASK = 5
 SUCCESS_THRESHOLD = 0.0   # terminal_reward > 0 = successful decision
+MAX_EPISODE_STEPS = 10
 
 llm_client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
@@ -59,6 +65,67 @@ VALID_OPERATIONS = [
     "decide",
 ]
 VALID_VERDICTS = ["remove", "monetize", "escalate", "keep"]
+
+INVESTIGATION_OPS = [op for op in VALID_OPERATIONS if op != "decide"]
+
+# ── System prompt with adjudication rubric ────────────────────────────────────
+
+SYSTEM_PROMPT = """You are a content policy adjudicator for a major social platform.
+You review copyright disputes by investigating evidence channels, then issuing a verdict.
+
+## How the environment works
+- You start each case seeing only surface metadata (uploader, claimant, duration, content type).
+- All investigation fields begin MASKED (shown as -1 or "unknown").
+- Each investigation action reveals specific fields. You have 5 investigation actions available:
+  1. query_rights_db      -> rights_holder_count, license_status, license_age_days, db_confidence, conflict_flag
+  2. assess_transformation -> transformation_index (0-1), commentary_present (0/1), overlap_duration_pct (0-1)
+  3. check_fingerprint    -> fingerprint_match (0/1), composition_similarity_score (0-1)
+  4. check_usage_context  -> commercial_channel (0/1), sub_license_depth
+  5. cross_ref_history    -> prior_disputes_same_uploader
+
+- Each action costs budget. Repeating an action wastes budget and is penalized.
+- When you have enough evidence, call "decide" with a verdict.
+
+## Verdict decision rules (apply these strictly based on revealed evidence)
+
+remove (clear infringement):
+  - fingerprint_match=1 with low transformation_index (<0.4) and commercial use
+  - OR composition_similarity_score > 0.7 even if fingerprint_match=0 (AI-reconstructed audio)
+  - OR verbatim repost: high overlap (>0.7), no commentary, commercial channel
+
+monetize (license violation, not outright piracy):
+  - license_status is "disputed" or "expired" with moderate transformation
+  - Creative Commons misapplication (license exists but terms violated)
+  - overlap is significant but content has some transformative value
+
+escalate (ambiguous, needs human review):
+  - conflict_flag=1 (multiple competing rights holders)
+  - Evidence contradicts itself (high transformation BUT high overlap)
+  - Orphaned work (rights_holder_count=0, unknown license)
+  - When in genuine doubt after investigation
+
+keep (fair use / non-infringing):
+  - transformation_index > 0.6 AND commentary_present=1 AND commercial_channel=0
+  - Educational use with moderate overlap (<0.35) and clear transformation
+  - Low overlap, non-commercial, clear commentary/criticism purpose
+
+## Investigation strategy
+- Start with query_rights_db (reveals license status and conflict_flag — most universally useful).
+- Then assess_transformation (reveals transformation level and overlap — the two biggest fair-use factors).
+- Use check_fingerprint if you suspect audio copying or need to confirm/deny a match.
+- Use check_usage_context if commercial vs non-commercial status matters for your decision.
+- Use cross_ref_history only if you need prior dispute context.
+- Decide as soon as you have enough evidence. Do NOT investigate all 5 channels every time.
+- NEVER repeat an action you already called.
+- If conflict_flag=1, you MUST have called query_rights_db before deciding (or you get a -0.40 penalty).
+
+## Response format
+Respond with a single JSON object. No explanation, no markdown, no extra text.
+
+Examples:
+  {"operation": "query_rights_db"}
+  {"operation": "decide", "verdict": "remove"}
+"""
 
 
 # ── Mandatory log helpers (format must match exactly) ─────────────────────────
@@ -84,41 +151,32 @@ def log_end(success: bool, steps: int, score: float, rewards: list[float]) -> No
     )
 
 
-# ── Prompt builder ─────────────────────────────────────────────────────────────
+# ── Observation formatter ─────────────────────────────────────────────────────
 
-def obs_to_prompt(obs: dict, budget: float) -> str:
+def format_observation(obs: dict, actions_taken: list[str]) -> str:
+    """Format the current observation into a readable message for the LLM."""
     lines = []
     for field, value in obs.items():
         if field in ("done", "reward", "metadata"):
             continue
         if value in (-1, -1.0, "unknown"):
-            lines.append(f"  {field}: NOT YET INVESTIGATED")
+            lines.append(f"  {field}: [MASKED]")
         else:
             lines.append(f"  {field}: {value}")
 
     obs_block = "\n".join(lines)
-    actions_str = ", ".join(VALID_OPERATIONS)
 
-    return f"""You are a content policy adjudicator for a major social platform.
-Investigate this rights dispute and make a defensible policy decision.
+    already_used = [op for op in actions_taken if op in INVESTIGATION_OPS]
+    remaining = [op for op in INVESTIGATION_OPS if op not in already_used]
+    remaining_str = ", ".join(remaining) if remaining else "none — you MUST call decide now"
 
-Current case state:
+    return f"""Current case evidence:
 {obs_block}
 
-Remaining action budget: {budget:.2f}
-Available actions: {actions_str}
+Actions already taken: {", ".join(actions_taken) if actions_taken else "none (first step)"}
+Remaining investigation actions: {remaining_str}
 
-Rules:
-- Investigate fields showing "NOT YET INVESTIGATED" before deciding on ambiguous cases.
-- Never call decide() while conflict_flag is unknown or unresolved.
-- When calling decide, you must also specify verdict: remove | monetize | escalate | keep.
-- Respond with a single JSON object only — no explanation, no markdown.
-
-Examples:
-  {{"operation": "query_rights_db"}}
-  {{"operation": "decide", "verdict": "remove"}}
-
-Your response:"""
+Choose your next action. Respond with JSON only."""
 
 
 # ── Action parser ──────────────────────────────────────────────────────────────
@@ -148,7 +206,7 @@ def parse_action(response_text: str) -> dict:
 
 # ── Episode runner ─────────────────────────────────────────────────────────────
 
-def run_episode(difficulty: str) -> float:
+def run_episode(difficulty: str, episode_num: int) -> float:
     """
     Run one full episode, emitting [START] / [STEP]* / [END] to stdout.
     Returns terminal reward.
@@ -158,12 +216,14 @@ def run_episode(difficulty: str) -> float:
     rewards: list[float] = []
     steps_taken = 0
     terminal_reward = 0.0
-    success = False
-    budget = 1.0
+    actions_taken: list[str] = []
+
+    # Multi-turn conversation history
+    messages: list[dict[str, str]] = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     try:
         with GenericEnvClient(base_url=ENV_BASE_URL).sync() as env:
-            result = env.reset(difficulty=difficulty)
+            result = env.reset(difficulty=difficulty, seed=episode_num)
             step = 0
 
             while not result.done:
@@ -171,21 +231,39 @@ def run_episode(difficulty: str) -> float:
                 obs = result.observation
                 error: str | None = None
 
-                prompt = obs_to_prompt(obs, budget)
-                try:
-                    llm_response = llm_client.chat.completions.create(
-                        model=MODEL_NAME,
-                        messages=[{"role": "user", "content": prompt}],
-                        max_tokens=64,
-                        temperature=0.0,
-                    )
-                    action = parse_action(llm_response.choices[0].message.content)
-                except Exception as exc:
+                if step > MAX_EPISODE_STEPS:
                     action = {"operation": "decide", "verdict": "escalate"}
-                    error = str(exc)[:120]
+                else:
+                    # Add current observation as user message
+                    obs_message = format_observation(obs, actions_taken)
+                    messages.append({"role": "user", "content": obs_message})
 
+                    try:
+                        llm_response = llm_client.chat.completions.create(
+                            model=MODEL_NAME,
+                            messages=messages,
+                            max_tokens=64,
+                            temperature=0.0,
+                        )
+                        response_text = llm_response.choices[0].message.content or ""
+                        action = parse_action(response_text)
+
+                        # Add LLM's response to conversation history
+                        messages.append({"role": "assistant", "content": response_text.strip()})
+                    except Exception as exc:
+                        action = {"operation": "decide", "verdict": "escalate"}
+                        error = str(exc)[:120]
+
+                    # Hard-enforce: never repeat an investigation action
+                    if action["operation"] in actions_taken and action["operation"] in INVESTIGATION_OPS:
+                        remaining = [op for op in INVESTIGATION_OPS if op not in actions_taken]
+                        if remaining:
+                            action = {"operation": remaining[0]}
+                        else:
+                            action = {"operation": "decide", "verdict": "escalate"}
+
+                actions_taken.append(action["operation"])
                 result = env.step(action)
-                budget = max(0.0, round(budget - 0.02, 10))
 
                 reward = result.reward or 0.0
                 done = result.done
@@ -196,12 +274,8 @@ def run_episode(difficulty: str) -> float:
                 log_step(step=step, action=action_str, reward=reward, done=done, error=error)
 
         terminal_reward = rewards[-1] if rewards else 0.0
-        score = min(1.0, max(0.0, terminal_reward))
-        success = terminal_reward > SUCCESS_THRESHOLD
 
     except Exception as exc:
-        score = 0.0
-        success = False
         print(f"[DEBUG] Episode error: {exc}", flush=True)
 
     finally:
@@ -220,8 +294,8 @@ def main() -> None:
     for difficulty, expected_optimal in TASKS:
         episode_scores: list[float] = []
 
-        for _ in range(EPISODES_PER_TASK):
-            score = run_episode(difficulty)
+        for ep in range(EPISODES_PER_TASK):
+            score = run_episode(difficulty, episode_num=ep)
             episode_scores.append(score)
 
         avg = round(statistics.mean(episode_scores), 3)
