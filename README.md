@@ -16,6 +16,8 @@ pinned: false
 
 Built for the **Meta × Hugging Face OpenEnv Hackathon** · Full OpenEnv spec compliance · FastAPI · Docker · Hugging Face Spaces
 
+![Episode Flow](assets/episode_flow.png)
+
 ---
 
 ## The Problem
@@ -116,6 +118,8 @@ class ContentGuardAction(Action):
 ```
 
 ### Reward Function
+
+![Reward Matrix Heatmap](assets/reward_heatmap.png)
 
 The reward signal has three components:
 
@@ -344,6 +348,8 @@ port: 8000
 ---
 
 ## Baseline Scores
+
+![Baseline Scores Chart](assets/baseline_scores.png)
 
 Scores produced by a zero-shot LLM (Llama-3.3-70B, no fine-tuning) via the included `inference.py`:
 
