@@ -40,6 +40,3 @@ Thumbs.db
 
 # Claude Code local settings — not part of submission
 .claude/
-
-# uv lockfile — Dockerfile uses pip, not uv
-uv.lock
