@@ -3,9 +3,9 @@
 ContentGuard baseline inference script.
 
 MANDATORY environment variables:
-  API_BASE_URL  — LLM API endpoint  (e.g. https://api.groq.com/openai/v1)
-  MODEL_NAME    — Model identifier  (e.g. llama-3.3-70b-versatile)
-  HF_TOKEN      — API key (Groq, HuggingFace, or OpenAI-compatible)
+  API_BASE_URL  - LLM API endpoint (default: https://router.huggingface.co/v1)
+  MODEL_NAME    - Model identifier (default: meta-llama/Llama-3.3-70B-Instruct)
+  API_KEY       - API key for the LLM proxy (falls back to HF_TOKEN)
 
 Optional env vars:
   ENV_BASE_URL  — ContentGuard env server (default: http://localhost:8000)
@@ -31,10 +31,10 @@ from openenv.core import GenericEnvClient
 # ── Mandatory competition variables ───────────────────────────────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.3-70B-Instruct")
-HF_TOKEN     = os.getenv("HF_TOKEN")
+API_KEY      = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 
-if not HF_TOKEN:
-    print("[ERROR] HF_TOKEN environment variable is required. Set it to your API key.", flush=True)
+if not API_KEY:
+    print("[ERROR] API_KEY or HF_TOKEN environment variable is required.", flush=True)
     sys.exit(1)
 
 ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:8000")
@@ -44,7 +44,7 @@ EPISODES_PER_TASK = 5
 SUCCESS_THRESHOLD = 0.0   # terminal_reward > 0 = successful decision
 MAX_EPISODE_STEPS = 10
 
-llm_client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+llm_client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 # ── All 7 difficulty tiers ─────────────────────────────────────────────────────
 TASKS = [
